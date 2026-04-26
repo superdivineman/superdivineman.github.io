@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NVIDIA GPU Fine-Tuning: Zero to Production — Superhuman</title>
+  <meta name="description" content="A complete guide to setting up NVIDIA GPUs and fine-tuning open-source LLMs — CUDA, PyTorch, LoRA, QLoRA, and deployment.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #030308;
+      --surface: rgba(255,255,255,0.03);
+      --surface2: rgba(255,255,255,0.05);
+      --border: rgba(255,255,255,0.07);
+      --text: #e2e2ee;
+      --muted: #6b6b8a;
+      --accent: #6c63ff;
+      --accent2: #00d4ff;
+      --gradient: linear-gradient(135deg, #6c63ff 0%, #00d4ff 100%);
+      --code-bg: #0d0d14;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+    }
+
+    #particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 48px;
+      background: rgba(3,3,8,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-size: 15px; font-weight: 600;
+      background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 4px; }
+    .nav-link {
+      padding: 7px 16px; font-size: 13px; font-weight: 450;
+      color: var(--muted); text-decoration: none; border-radius: 8px; transition: all 0.2s;
+    }
+    .nav-link:hover { color: var(--text); background: var(--surface); }
+    .nav-link.active { color: var(--text); background: var(--surface); }
+
+    /* ── Container ── */
+    .container { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Hero ── */
+    .post-hero { padding: 140px 0 60px; }
+    .post-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .tag {
+      display: inline-block; font-size: 11px; font-weight: 600; padding: 4px 12px;
+      border-radius: 100px; background: rgba(108,99,255,0.15); color: var(--accent);
+    }
+    .reading-time { font-size: 12px; color: var(--muted); }
+    h1 {
+      font-size: clamp(28px, 5vw, 46px); font-weight: 700;
+      letter-spacing: -1.5px; line-height: 1.15; margin-bottom: 20px;
+    }
+    h1 .highlight {
+      background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .subtitle { font-size: 17px; color: var(--muted); margin-bottom: 40px; font-weight: 350; }
+    .author { display: flex; align-items: center; gap: 12px; padding: 20px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 56px; }
+    .author-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--gradient); display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px; color: #fff; flex-shrink: 0;
+    }
+    .author-info { font-size: 14px; }
+    .author-name { font-weight: 600; }
+    .author-date { color: var(--muted); font-size: 13px; }
+
+    /* ── Content ── */
+    .content { padding-bottom: 100px; }
+
+    h2 {
+      font-size: clamp(20px, 3vw, 26px); font-weight: 700; letter-spacing: -0.8px;
+      margin: 56px 0 20px;
+    }
+    h3 {
+      font-size: 18px; font-weight: 600; margin: 32px 0 14px;
+    }
+    p { margin-bottom: 18px; font-size: 15.5px; color: #cccce0; }
+    strong { color: var(--text); font-weight: 600; }
+
+    ul, ol { margin: 0 0 20px 20px; color: #cccce0; font-size: 15.5px; }
+    li { margin-bottom: 8px; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Code ── */
+    code {
+      font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      background: var(--code-bg); color: #a8a8e0;
+      padding: 2px 7px; border-radius: 5px;
+    }
+    pre {
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px 24px; overflow-x: auto;
+      margin: 24px 0 32px; font-size: 13px; line-height: 1.65;
+    }
+    pre code { background: none; padding: 0; font-size: 13px; color: #c8c8e0; }
+
+    .comment { color: #4a5568; }
+    .keyword { color: #c792ea; }
+    .string { color: #c3e88d; }
+    .function { color: #82aaff; }
+    .number { color: #f78c6c; }
+    .class { color: #ffcb6b; }
+    .variable { color: #f07178; }
+    .operator { color: #89ddff; }
+
+    /* ── Callout ── */
+    .callout {
+      background: rgba(108,99,255,0.07);
+      border: 1px solid rgba(108,99,255,0.2);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 12px 12px 0;
+      padding: 18px 22px; margin: 28px 0;
+      font-size: 14.5px; color: #aaaacc;
+    }
+    .callout-title { font-weight: 600; color: var(--accent); margin-bottom: 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+    .callout.info { border-color: rgba(0,212,255,0.3); background: rgba(0,212,255,0.05); }
+    .callout.info .callout-title { color: var(--accent2); }
+    .callout.warn { border-color: rgba(251,189,35,0.3); background: rgba(251,189,35,0.05); }
+    .callout.warn .callout-title { color: #fbd435; }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; margin: 24px 0 32px; font-size: 14px; }
+    th { text-align: left; padding: 10px 16px; background: var(--surface2); border-bottom: 1px solid var(--border); color: var(--text); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    td { padding: 10px 16px; border-bottom: 1px solid var(--border); color: #aaaacc; }
+    tr:hover td { background: var(--surface); }
+
+    /* ── Divider ── */
+    .divider { width: 48px; height: 2px; background: var(--gradient); margin: 48px 0; border-radius: 2px; }
+
+    /* ── Footer ── */
+    footer {
+      position: relative; z-index: 1; text-align: center;
+      padding: 40px; font-size: 13px; color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+    footer span { color: var(--accent); }
+    footer a { color: var(--accent); }
+
+    @media (max-width: 700px) {
+      nav { padding: 16px 20px; }
+      pre { font-size: 12px; padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<nav>
+  <a href="../index.html" class="nav-logo">Superhuman</a>
+  <div class="nav-links">
+    <a href="../index.html" class="nav-link">Home</a>
+    <a href="nvidia-gpu-finetune.html" class="nav-link active">Blog</a>
+    <a href="../guide.html" class="nav-link">PyTorch Guide</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="post-hero">
+    <div class="post-meta">
+      <span class="tag">Deep Dive</span>
+      <span class="reading-time">~18 min read</span>
+    </div>
+    <h1>NVIDIA GPU Fine-Tuning:<br><span class="highlight">From Zero to Production</span></h1>
+    <p class="subtitle">A complete, practical guide to setting up NVIDIA GPUs and fine-tuning open-source LLMs — covering CUDA setup, PyTorch, LoRA, QLoRA, and production deployment.</p>
+    <div class="author">
+      <div class="author-avatar">S</div>
+      <div class="author-info">
+        <div class="author-name">Superhuman</div>
+        <div class="author-date">April 2026 · Updated with CUDA 12.x + PyTorch 2.x</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+<h2 id="toc">Table of Contents</h2>
+<ol>
+  <li><a href="#gpu-landscape">The GPU Landscape in 2026</a></li>
+  <li><a href="#hardware">Hardware You Actually Need</a></li>
+  <li><a href="#cuda">CUDA Setup: Driver, Toolkit, Containers</a></li>
+  <li><a href="#pytorch">PyTorch + GPU Verification</a></li>
+  <li><a href="#why-finetune">Why Fine-Tune? Where It Makes Sense</a></li>
+  <li><a href="#models">Choosing a Model: Quantization Overview</a></li>
+  <li><a href="#lora">LoRA Fine-Tuning: The Modern Standard</a></li>
+  <li><a href="#qlora">QLoRA: Fine-Tuning a 70B Model on a Single 24GB GPU</a></li>
+  <li><a href="#training-loop">Full Training Loop: Llama 3 + LoRA</a></li>
+  <li><a href="#evaluation">Evaluation: Does It Actually Work?</a></li>
+  <li><a href="#deployment">Deployment: vLLM, Ollama, or Custom</a></li>
+  <li><a href="#checklist">Production Checklist</a></li>
+</ol>
+
+<div class="divider"></div>
+
+<h2 id="gpu-landscape">1. The GPU Landscape in 2026</h2>
+
+<p>The gap between training and inference has never been wider. Training a frontier model requires thousands of H100s for weeks. Fine-tuning one for your domain requires one (or a few) consumer-grade GPUs and the right techniques.</p>
+
+<p>Fine-tuning is no longer a PhD's privilege. With <strong>QLoRA</strong>, you can adapt a 70B parameter model on a single 24GB GPU. This changes everything.</p>
+
+<div class="callout">
+  <div class="callout-title">Key Insight</div>
+  Fine-tuning is not retraining. You're not teaching a model new knowledge — you're steering its existing knowledge toward your task. This is why LoRA works with 0.1% of the parameters.
+</div>
+
+<h2 id="hardware">2. Hardware You Actually Need</h2>
+
+<table>
+  <thead>
+    <tr><th>GPU</th><th>VRAM</th><th>Fine-Tuning Capacity</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>NVIDIA A100</td><td>40GB / 80GB</td><td>70B+ full, 400B+ LoRA</td><td>Datacenter standard</td></tr>
+    <tr><td>NVIDIA H100</td><td>80GB</td><td>Anything you want</td><td>Expensive, scarce</td></tr>
+    <tr><td>NVIDIA 3090</td><td>24GB</td><td>7B full, 13B QLoRA</td><td>Best consumer option</td></tr>
+    <tr><td>NVIDIA 4090</td><td>24GB</td><td>7B full, 13B QLoRA</td><td>Faster than 3090</td></tr>
+    <tr><td>NVIDIA A6000</td><td>48GB</td><td>13B full, 34B QLoRA</td><td>Workstation grade</td></tr>
+    <tr><td>Apple M3 Max</td><td>~40GB unified</td><td>13B QLoRA (MLX)</td><td>MLX framework, no CUDA</td></tr>
+  </tbody>
+</table>
+
+<p>For this guide: assume a single consumer GPU with 24GB VRAM. Everything here works on more powerful hardware too — you just wait less.</p>
+
+<h2 id="cuda">3. CUDA Setup</h2>
+
+<h3>3.1 Check What You Have</h3>
+
+<pre><code>nvidia-smi</code></pre>
+
+<p>Look for the <strong>Driver Version</strong> at the top. This determines your maximum CUDA version.</p>
+
+<table>
+  <thead>
+    <tr><th>Driver Version</th><th>Max CUDA Version</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>≥ 545.23</td><td>CUDA 12.x</td></tr>
+    <tr><td>≥ 530.30</td><td>CUDA 12.x</td></tr>
+    <tr><td>≥ 525.85</td><td>CUDA 12.x</td></tr>
+    <tr><td>470.x</td><td>CUDA 11.x (legacy)</td></tr>
+  </tbody>
+</table>
+
+<h3>3.2 Install CUDA Toolkit (if needed)</h3>
+
+<pre><code># Ubuntu 22.04 — install CUDA 12.4 via apt
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+sudo dpkg -i cuda-keyring_1.1-1_all.deb
+sudo apt update
+sudo apt install cuda-toolkit-12-4
+
+# Add to PATH (add to ~/.bashrc)
+export PATH=/usr/local/cuda-12.4/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:$LD_LIBRARY_PATH
+
+# Verify
+nvcc --version</code></pre>
+
+<h3>3.3 NVIDIA Container Toolkit (Recommended)</h3>
+
+<pre><code># Install Docker + NVIDIA Container Toolkit
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | \
+  sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+sudo apt update
+sudo apt install -y nvidia-container-toolkit
+sudo systemctl restart docker
+
+# Run PyTorch container with GPU passthrough
+docker run --gpus all -it --rm \
+  -v $(pwd):/workspace \
+  pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime \
+  bash</code></pre>
+
+<div class="callout info">
+  <div class="callout-title">Docker or Bare Metal?</div>
+  Use NVIDIA Container Toolkit + Docker for reproducibility. The official PyTorch Docker images come pre-configured with CUDA + cuDNN. No more "it works on my machine" issues.
+</div>
+
+<h2 id="pytorch">4. PyTorch + GPU Verification</h2>
+
+<pre><code><span class="comment"># Install PyTorch with CUDA 12.x support</span>
+pip install torch torchvision torchaudio \
+  --index-url https://download.pytorch.org/whl/cu121
+
+<span class="comment"># Verify everything works</span>
+python -c <span class="string">"
+import torch
+print(<span class="string">'PyTorch:'</span>, torch.__version__)
+print(<span class="string">'CUDA available:'</span>, torch.cuda.is_available())
+print(<span class="string">'CUDA version:'</span>, torch.version.cuda)
+print(<span class="string">'GPU count:'</span>, torch.cuda.device_count())
+print(<span class="string">'GPU name:'</span>, torch.cuda.get_device_name(0) <span class="keyword">if</span> torch.cuda.is_available() <span class="keyword">else</span> <span class="string">'N/A'</span>)
+print(<span class="string">'GPU memory:'</span>, round(torch.cuda.get_device_properties(0).total_memory / 1e9, 1), <span class="string">'GB'</span> <span class="keyword">if</span> torch.cuda.is_available() <span class="keyword">else</span> <span class="string">'N/A'</span>)
+
+<span class="comment"># Quick compute test</span>
+<span class="keyword">if</span> torch.cuda.is_available():
+    x = torch.randn(1000, 1000, device='cuda')
+    y = x @ x.T
+    print(<span class="string">'✓ GPU compute works'</span>)
+"</span></code></pre>
+
+<h2 id="why-finetune">5. Why Fine-Tune? Where It Makes Sense</h2>
+
+<p>Before you fine-tune, ask: <strong>can prompt engineering solve this?</strong></p>
+
+<p>Fine-tuning is worth it when:</p>
+<ul>
+  <li>You need consistent <strong>output format</strong> across many queries</li>
+  <li>You have <strong>domain-specific knowledge</strong> the model doesn't know well</li>
+  <li>You want the model to adopt a <strong>specific persona, tone, or reasoning style</strong></li>
+  <li>You're building a <strong>specialized classifier</strong> that needs context-aware embeddings</li>
+  <li>API calls are too expensive for your use case at scale</li>
+</ul>
+
+<p>Fine-tuning is <strong>NOT</strong> worth it when:</p>
+<ul>
+  <li>The base model already does the job with good prompting</li>
+  <li>You don't have enough training data (&lt;100 examples — use RAG instead)</li>
+  <li>Your task is purely factual retrieval (update your knowledge base, not weights)</li>
+</ul>
+
+<div class="callout warn">
+  <div class="callout-title">The RAG Alternative</div>
+  If your model doesn't "know" something, it's usually cheaper and fresher to connect it to a retrieval system (RAG) than to fine-tune. Fine-tuning bakes knowledge into weights — it's slow to update and costly to retrain.
+</div>
+
+<h2 id="models">6. Choosing a Model: Quantization Overview</h2>
+
+<p>Full-precision models are too large for most GPUs. Quantization reduces weight precision (e.g., 16-bit → 4-bit) with minimal quality loss.</p>
+
+<table>
+  <thead>
+    <tr><th>Format</th><th>Bits</th><th>VRAM (70B model)</th><th>Quality</th><th>Tool</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>FP16 / BF16</td><td>16</td><td>~140GB</td><td>Baseline</td><td>—</td></tr>
+    <tr><td>GPTQ</td><td>4</td><td>~37GB</td><td>~99%</td><td>AutoGPTQ</td></tr>
+    <tr><td>AWQ</td><td>4</td><td>~37GB</td><td>~99%+</td><td>AWQ</td></tr>
+    <tr><td>GGUF (Q4_K_M)</td><td>4</td><td>~40GB</td><td>~98%</td><td>llama.cpp</td></tr>
+    <tr><td>GGUF (Q8_0)</td><td>8</td><td>~70GB</td><td>~99.5%</td><td>llama.cpp</td></tr>
+  </tbody>
+</table>
+
+<p>For fine-tuning with LoRA/QLoRA, use <strong>BF16 base models</strong> (or FP16 for consumer cards). After fine-tuning, quantize for inference.</p>
+
+<h2 id="lora">7. LoRA Fine-Tuning: The Modern Standard</h2>
+
+<h3>7.1 Why LoRA Works</h3>
+
+<p>Full fine-tuning updates billions of parameters. LoRA observes that fine-tuned models stay close to their pretrained initialization — the "direction" of adaptation is <strong>low-rank</strong>. Instead of updating W, LoRA freezes W and adds two small matrices A and B. Training only A and B is dramatically cheaper.</p>
+
+<pre><code><span class="comment"># LoRA math</span>
+<span class="comment"># Full fine-tuning:   Y = W_final · X    (W_final updated)</span>
+<span class="comment"># LoRA:               Y = (W_0 + BA) · X  (only A and B trained, W_0 frozen)</span>
+<span class="comment"># If W_0 is d×d, A is r×d and B is d×r, with r << d</span>
+<span class="comment"># Memory cost: 2dr instead of d² — huge savings</span></code></pre>
+
+<h3>7.2 Key LoRA Hyperparameters</h3>
+
+<table>
+  <thead>
+    <tr><th>Param</th><th>Typical Value</th><th>Effect</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>r</code></td><td>8, 16, 32, 64</td><td>Rank. Higher = more capacity, more params. 16 is usually enough.</td></tr>
+    <tr><td><code>lora_alpha</code></td><td>2×r (e.g. 32 for r=16)</td><td>Scaling factor. Keep at 2×r for stability.</td></tr>
+    <tr><td><code>lora_dropout</code></td><td>0.05 – 0.1</td><td>Regularization. 0.05 is standard.</td></tr>
+    <tr><td><code>target_modules</code></td><td>q_proj, v_proj (minimum)</td><td>Which attention layers to adapt. Add k_proj, o_proj, gate_proj, up_proj, down_proj for more capacity.</td></tr>
+    <tr><td><code>bias</code></td><td>"none" (default)</td><td>Usually keep "none". "all" adds bias trainable params.</td></tr>
+  </tbody>
+</table>
+
+<h3>7.3 Install LoRA Libraries</h3>
+
+<pre><code>pip install \
+  peft           <span class="comment"># HuggingFace LoRA wrapper</span>\
+  bitsandbytes    <span class="comment"># 4-bit quantization for QLoRA</span>\
+  transformers   <span class="comment"># Model loading</span>\
+  accelerate     <span class="comment"># Distributed training utility</span>\
+  trl            <span class="comment"># Supervised Fine-tuning Trainer (optional)</span>\
+  datasets       <span class="comment"># Data loading</span>\
+  huggingface_hub <span class="comment"># Model downloads</span></code></pre>
+
+<h2 id="qlora">8. QLoRA: Fine-Tuning a 70B Model on a Single 24GB GPU</h2>
+
+<p>QLoRA = Quantized base model + LoRA adapters. The key insight: <strong>backpropagation gradients are cheap</strong> (they're stored in FP16), only the forward pass uses the quantized base model. You can fit a 70B model in 35GB of VRAM.</p>
+
+<pre><code><span class="keyword">from</span> transformers <span class="keyword import</span> AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+<span class="keyword">from</span> peft <span class="keyword">import</span> LoraConfig, get_peft_model, prepare_model_for_kbit_training
+<span class="keyword">import</span> torch
+
+<span class="comment"># ── 4-bit quantization config ──────────────────────────────────────────────</span>
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type=<span class="string">"nf4"</span>,              <span class="comment"># Normal Float 4 — optimal for normally distributed weights</span>
+    bnb_4bit_compute_dtype=torch.bfloat16,  <span class="comment"># Compute in BF16, store in 4-bit</span>
+    bnb_4bit_use_double_quant=True,         <span class="comment"># Nested quantization: extra memory saving</span>
+)
+
+<span class="comment"># ── Load base model in 4-bit ────────────────────────────────────────────────</span>
+model_name = <span class="string">"meta-llama/Meta-Llama-3-8B-Instruct"</span>
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+tokenizer.pad_token = tokenizer.eos_token
+
+<span class="comment"># device_map="auto" distributes layers across available GPUs/VRAM automatically</span>
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    quantization_config=bnb_config,
+    device_map=<span class="string">"auto"</span>,
+    trust_remote_code=True,
+)
+
+<span class="comment"># Required for QLoRA: tell model to prepare for k-bit training hooks</span>
+model = prepare_model_for_kbit_training(model)
+
+<span class="comment"># ── LoRA config ─────────────────────────────────────────────────────────────</span>
+lora_config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    target_modules=[<span class="string">"q_proj"</span>, <span class="string">"k_proj"</span>, <span class="string">"v_proj"</span>, <span class="string">"o_proj"</span>, <span class="string">"gate_proj"</span>, <span class="string">"up_proj"</span>, <span class="string">"down_proj"</span>],
+    lora_dropout=0.05,
+    bias=<span class="string">"none"</span>,
+    task_type=<span class="string">"CAUSAL_LM"</span>,
+)
+
+<span class="comment"># Wrap model with LoRA — only LoRA params are trainable</span>
+model = get_peft_model(model, lora_config)
+model.print_trainable_parameters()
+<span class="comment"># trainable params: 41M || all params: 8.03B || trainable%: 0.51%</span></code></pre>
+
+<div class="callout info">
+  <div class="callout-title">Why NF4, not FP4?</div>
+  NF4 (Normal Float 4) is designed for weights that follow a normal distribution — which is true for most pretrained model weights. Using FP4 with NF4-quantized models causes a ~6% quality degradation. Always use <code>bnb_4bit_quant_type="nf4"</code>.
+</div>
+
+<h2 id="training-loop">9. Full Training Loop: Llama 3 + LoRA</h2>
+
+<pre><code><span class="keyword">from</span> transformers <span class="keyword">import</span> TrainingArguments, Trainer, DataCollatorForLanguageModeling
+<span class="keyword">from</span> datasets <span class="keyword">import</span> load_dataset
+<span class="keyword">import</span> torch
+
+<span class="comment"># ── Load and prepare dataset ────────────────────────────────────────────────</span>
+<span class="comment"># Format: one text per line, or use HF datasets with prompt template</span>
+dataset = load_dataset(<span class="string">"text"</span>, data_files={<span class="string">"train"</span>: <span class="string">"./my-data.txt"</span>}, split=<span class="string">"train"</span>)
+
+<span class="comment"># Tokenize with chunking (LoRA needs fixed-length inputs)</span>
+<span class="keyword">def</span> <span class="function">tokenize</span>(example):
+    <span class="keyword">return</span> tokenizer(
+        example[<span class="string">"text"</span>],
+        truncation=True,
+        max_length=512,
+        padding=<span class="string">"max_length"</span>,
+    )
+
+tokenized_dataset = dataset.map(tokenize, batched=False, remove_columns=[<span class="string">"text"</span>])
+
+<span class="comment"># ── Training arguments ──────────────────────────────────────────────────────</span>
+training_args = TrainingArguments(
+    output_dir=<span class="string">"./llama3-lora-output"</span>,
+    num_train_epochs=3,
+    per_device_train_batch_size=4,        <span class="comment"># adjust based on VRAM</span>
+    gradient_accumulation_steps=4,         <span class="comment"># effective batch = 4×4=16</span>
+    gradient_checkpointing=True,           <span class="comment"># trade compute for memory</span>
+    optim=<span class="string">"paged_adamw_32bit"</span>,            <span class="comment"># Paged optimizer — avoids OOM on long runs</span>
+    learning_rate=2e-4,
+    weight_decay=0.001,
+    fp16=False,                            <span class="comment"># use bf16 if supported</span>
+    bf16=True,
+    logging_steps=10,
+    save_strategy=<span class="string">"epoch"</span>,
+    warmup_ratio=0.03,
+    lr_scheduler_type=<span class="string">"cosine"</span>,
+    report_to=<span class="string">"tensorboard"</span>,
+    save_total_limit=2,                   <span class="comment"># keep only last 2 checkpoints</span>
+)
+
+<span class="comment"># ── Data collator ───────────────────────────────────────────────────────────</span>
+collator = DataCollatorForLanguageModeling(
+    tokenizer=tokenizer,
+    mlm=False,                             <span class="comment"># Causal LM (not masked LM)</span>
+)
+
+<span class="comment"># ── Train ───────────────────────────────────────────────────────────────────</span>
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    data_collator=collator,
+    train_dataset=tokenized_dataset,
+)
+
+<span class="comment"># Disable model's default pad token handling for causal LM</span>
+model.config.use_cache = False
+trainer.train()
+
+<span class="comment"># ── Save adapter only (not the full model) ──────────────────────────────────</span>
+model.save_pretrained(<span class="string">"./my-lora-adapter"</span>)
+<span class="keyword">print</span>(<span class="string">"✓ LoRA adapter saved to ./my-lora-adapter"</span>)</code></pre>
+
+<h3>9.1 Merging and Inference</h3>
+
+<pre><code><span class="comment"># Load base model (can be different from training quant)</span>
+base_model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype=torch.bfloat16,
+    device_map=<span class="string">"auto"</span>,
+)
+
+<span class="comment"># Load LoRA adapter on top</span>
+<span class="keyword">from</span> peft <span class="keyword">import</span> PeftModel
+model = PeftModel.from_pretrained(base_model, <span class="string">"./my-lora-adapter"</span>)
+
+<span class="comment"># Optional: merge weights (no runtime LoRA overhead)</span>
+<span class="comment"># This produces a standard model you can share/inference normally</span>
+merged_model = model.merge_and_unload()
+merged_model.save_pretrained(<span class="string">"./my-merged-model"</span>)
+
+<span class="comment"># ── Run inference ───────────────────────────────────────────────────────────</span>
+prompt = <span class="string">"Explain quantum entanglement to a 10-year-old:"</span>
+inputs = tokenizer(prompt, return_tensors=<span class="string">"pt"</span>).to(model.device)
+
+<span class="keyword">with</span> torch.no_grad():
+    outputs = model.generate(
+        **inputs,
+        max_new_tokens=256,
+        temperature=0.7,
+        top_p=0.9,
+        do_sample=True,
+    )
+    <span class="keyword">print</span>(tokenizer.decode(outputs[0], skip_special_tokens=True))</code></pre>
+
+<h2 id="evaluation">10. Evaluation</h2>
+
+<p>Don't rely on vibes. Use structured evaluation:</p>
+
+<pre><code><span class="comment"># Use lm-evaluation-harness (EleutherAI) for standard benchmarks</span>
+pip install lm-evaluation-harness
+
+<span class="comment"># Evaluate on HELM (Holistic Evaluation of Language Models)</span>
+<span class="comment"># or use their own simple per-task evaluator</span>
+
+<span class="comment"># For custom tasks — build an eval set</span>
+<span class="keyword">from</span> transformers <span class="keyword">import</span> pipeline
+
+evaluator = pipeline(
+    <span class="string">"text-generation"</span>,
+    model=merged_model,
+    tokenizer=tokenizer,
+    device_map=<span class="string">"auto"</span>,
+)
+
+test_cases = [
+    {<span class="string">"prompt"</span>: <span class="string">"What is the capital of France?"</span>,    <span class="string">"expected"</span>: <span class="string">"Paris"</span>},
+    {<span class="string">"prompt"</span>: <span class="string">"Write a Python quicksort:"</span>,
+<h2 id="evaluation">10. Evaluation</h2>
+
+<p>Don't rely on vibes. Use structured evaluation:</p>
+
+<pre><code><span class="comment"># Use lm-evaluation-harness (EleutherAI) for standard benchmarks</span>
+pip install lm-evaluation-harness
+
+<span class="comment"># Run evaluation</span>
+lm_eval \
+  --model hf \
+  --model_args pretrained=./my-merged-model \
+  --tasks mmlu,hellaswag,truthfulqa_mc2 \
+  --batch_size 8
+
+<span class="comment"># For custom tasks — build an eval set with exact-match + LLM-as-judge</span>
+<span class="keyword">from</span> transformers <span class="keyword">import</span> pipeline
+
+evaluator = pipeline(<span class="string">"text-generation"</span>, model=merged_model, tokenizer=tokenizer)
+
+test_cases = [
+    {<span class="string">"prompt"</span>: <span class="string">"What is 12 × 17?"</span>,       <span class="string">"expected"</span>: <span class="string">"204"</span>},
+    {<span class="string">"prompt"</span>: <span class="string">"Write a quicksort in Python"</span>},
+]
+<span class="keyword">for</span> tc <span class="keyword">in</span> test_cases:
+    result = evaluator(tc[<span class="string">"prompt"</span>], max_new_tokens=256)[0][<span class="string">"generated_text"</span>]
+    <span class="keyword">print</span>(<span class="string">f"Prompt: {tc['prompt']}\nResponse: {result}\n"</span>)</code></pre>
+
+<h2 id="deployment">11. Deployment</h2>
+
+<h3>Option A — vLLM (Recommended for Production)</h3>
+
+<pre><code>pip install vllm
+
+<span class="comment"># Serve your merged model with OpenAI-compatible API</span>
+vllm serve ./my-merged-model \
+  --dtype half \
+  --port 8000 \
+  --tensor-parallel-size 1
+
+<span class="comment"># Query with OpenAI client</span>
+<span class="keyword">from</span> openai <span class="keyword">import</span> OpenAI
+client = OpenAI(base_url=<span class="string">"http://localhost:8000/v1"</span>, api_key=<span class="string">"none"</span>)
+response = client.chat.completions.create(
+    model=<span class="string">"./my-merged-model"</span>,
+    messages=[{<span class="string">"role"</span>: <span class="string">"user"</span>, <span class="string">"content"</span>: <span class="string">"Hello!"</span>}],
+)
+<span class="keyword">print</span>(response.choices[0].message.content)</code></pre>
+
+<h3>Option B — Ollama (Simplest, Local)</h3>
+
+<pre><code><span class="comment"># Download model and run</span>
+ollama pull llama3
+ollama run llama3
+
+<span class="comment"># Or serve your fine-tuned LoRA adapter with Ollama</span>
+<span class="comment"># Create Modelfile</span>
+FROM ./my-merged-model
+PARAMETER temperature 0.7
+SYSTEM <span class="string">"You are a helpful assistant."</span>
+ollama create my-finetune -f Modelfile
+ollama serve my-finetune</code></pre>
+
+<h3>Option C — Quantized + GGUF (llama.cpp)</h3>
+
+<pre><code><span class="comment"># Quantize to Q4_K_M using llama.cpp</span>
+git clone https://github.com/ggerganov/llama.cpp
+<span class="comment"># ... (build from source — requires cmake, make, OpenBLAS)</span>
+
+./llama.cpp/quantize \
+  ./my-merged-model/ \
+  ./my-model-q4_k_m.gguf \
+  q4_k_m
+
+<span class="comment"># Run inference — extremely fast, CPU-compatible</span>
+./llama.cpp/main \
+  -m ./my-model-q4_k_m.gguf \
+  -n 512 \
+  -t 8 \
+  -p <span class="string">"Explain fine-tuning in one sentence:"</span></code></pre>
+
+<h2 id="checklist">12. Production Checklist</h2>
+
+<div class="callout">
+  <div class="callout-title">Before You Deploy</div>
+</div>
+
+<ul>
+  <li>☐ <strong>Quantize if needed</strong> — don't serve BF16 at scale unless you need it</li>
+  <li>☐ <strong>Benchmark baseline</strong> — measure throughput (tokens/sec) before and after</li>
+  <li>☐ <strong>Set appropriate max_tokens</strong> — prevent runaway generation</li>
+  <li>☐ <strong>Temperature = 0</strong> for factual tasks, &gt;0 for creative ones</li>
+  <li>☐ <strong>Implement retries + fallbacks</strong> — GPU OOM will happen in production</li>
+  <li>☐ <strong>Log inputs and outputs</strong> — you need this for the next iteration</li>
+  <li>☐ <strong>Monitor GPU VRAM</strong> — use <code>nvidia-smi dmon</code> in production</li>
+  <li>☐ <strong>Set up eval CI</strong> — run your eval set on every fine-tune before deploying</li>
+  <li>☐ <strong>Prepare a rollback</strong> — keep the previous adapter checkpoint</li>
+</ul>
+
+<pre><code><span class="comment"># Monitor GPU in production</span>
+watch -n 1 nvidia-smi
+
+<span class="comment"># VRAM usage script</span>
+python -c <span class="string">"
+import torch
+<span class='keyword'>while</span> True:
+    <span class='keyword'>if</span> torch.cuda.is_available():
+        used = torch.cuda.memory_allocated() / 1e9
+        total = torch.cuda.get_device_properties(0).total_memory / 1e9
+        print(<span class='string'>f'VRAM: {used:.1f}GB / {total:.1f}GB'</span>)
+    import time; time.sleep(5)
+"</span></code></pre>
+
+<div class="divider"></div>
+
+<p style="text-align:center; font-size:14px; color:#6b6b8a;">
+  ← <a href="../index.html" style="color:#6c63ff;">Back to Home</a>
+  &nbsp;·&nbsp;
+  <a href="../guide.html" style="color:#6c63ff;">PyTorch Guide</a>
+</p>
+
+  </div>
+</div>
+
+<footer>
+  <span>S</span> · Superhuman · Human × AI · 2026
+</footer>
+
+<script>
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let w, h, pts = [];
+  function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  for (let i = 0; i < 80; i++) {
+    pts.push({ x: Math.random()*w, y: Math.random()*h, vx: (Math.random()-0.5)*0.25, vy: (Math.random()-0.5)*0.25, r: Math.random()*1.2+0.3, a: Math.random()*0.5+0.1 });
+  }
+  function draw() {
+    ctx.clearRect(0,0,w,h);
+    for (let p of pts) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
+      if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(108,99,255,${p.a})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+</script>
+</body>
+</html>

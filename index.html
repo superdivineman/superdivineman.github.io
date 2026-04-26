@@ -3,238 +3,266 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Superhuman — Where Human Meets AI</title>
+  <title>Superhuman — Human × AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #030308;
+      --surface: rgba(255,255,255,0.03);
+      --border: rgba(255,255,255,0.07);
+      --text: #e2e2ee;
+      --muted: #6b6b8a;
+      --accent: #6c63ff;
+      --accent2: #00d4ff;
+      --gradient: linear-gradient(135deg, #6c63ff 0%, #00d4ff 100%);
+    }
+
+    html { scroll-behavior: smooth; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0a0a0f;
-      color: #e8e8f0;
-      line-height: 1.7;
-      min-height: 100vh;
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
       overflow-x: hidden;
     }
 
-    .canvas {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 0;
-      opacity: 0.4;
+    /* ── Particles ── */
+    #particles {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
     }
 
-    .container {
-      position: relative;
-      z-index: 1;
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 80px 24px;
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 48px;
+      background: rgba(3,3,8,0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
     }
-
-    .hero {
-      text-align: center;
-      padding: 100px 0 80px;
-    }
-
-    .avatar {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-      margin: 0 auto 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 48px;
-      font-weight: 700;
-      color: white;
-      box-shadow: 0 0 60px rgba(102, 126, 234, 0.4);
-    }
-
-    .name {
-      font-size: 36px;
-      font-weight: 700;
-      letter-spacing: -1px;
-      margin-bottom: 8px;
-    }
-
-    .tagline {
-      font-size: 18px;
-      color: #9999bb;
-      margin-bottom: 32px;
-    }
-
-    .quote-block {
-      max-width: 520px;
-      margin: 0 auto 48px;
-      padding: 24px 32px;
-      background: rgba(255,255,255,0.04);
-      border-radius: 12px;
-      border-left: 3px solid #667eea;
-      font-size: 15px;
-      color: #ccccdd;
-      font-style: italic;
-    }
-
-    .section {
-      margin-bottom: 56px;
-    }
-
-    .section-title {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: #667eea;
-      margin-bottom: 20px;
-    }
-
-    .manifesto {
-      font-size: 16px;
-      line-height: 1.9;
-      color: #aaaacc;
-    }
-
-    .manifesto p + p {
-      margin-top: 16px;
-    }
-
-    .links {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 20px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px;
-      color: #ccccdd;
+    .nav-logo {
+      font-size: 15px; font-weight: 600; letter-spacing: -0.3px;
+      background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       text-decoration: none;
-      font-size: 14px;
+    }
+    .nav-links { display: flex; gap: 4px; }
+    .nav-link {
+      padding: 7px 16px; font-size: 13px; font-weight: 450;
+      color: var(--muted); text-decoration: none; border-radius: 8px;
       transition: all 0.2s;
     }
+    .nav-link:hover { color: var(--text); background: var(--surface); }
+    .nav-link.active { color: var(--text); background: var(--surface); }
 
-    .link:hover {
-      background: rgba(102,126,234,0.2);
-      border-color: #667eea;
-      color: #fff;
+    /* ── Layout ── */
+    .container { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 32px; }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; text-align: center;
+      padding: 120px 32px 80px;
     }
-
-    .divider {
-      width: 60px;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, #667eea, transparent);
-      margin: 48px auto;
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 14px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 100px; font-size: 12px; color: var(--muted); margin-bottom: 32px;
     }
+    .hero-badge span { color: var(--accent2); }
+    .hero h1 {
+      font-size: clamp(42px, 7vw, 80px); font-weight: 700;
+      letter-spacing: -2.5px; line-height: 1.05; margin-bottom: 20px;
+    }
+    .hero h1 .gradient-text {
+      background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero-sub {
+      font-size: clamp(16px, 2.2vw, 20px); color: var(--muted);
+      max-width: 560px; margin: 0 auto 48px; font-weight: 350;
+    }
+    .hero-cta {
+      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 500;
+      text-decoration: none; transition: all 0.2s; cursor: pointer; border: none;
+    }
+    .btn-primary {
+      background: var(--gradient); color: #fff;
+    }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-outline {
+      background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.07); transform: translateY(-1px); }
 
+    /* ── Philosophy ── */
+    .philosophy { padding: 80px 0; }
+    .philosophy-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    .philosophy-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 36px; transition: all 0.3s;
+    }
+    .philosophy-card:hover { border-color: rgba(108,99,255,0.3); transform: translateY(-2px); }
+    .philosophy-card .emoji { font-size: 32px; margin-bottom: 16px; }
+    .philosophy-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+    .philosophy-card p { font-size: 14px; color: var(--muted); }
+
+    /* ── Blog Section ── */
+    .blog-section { padding: 80px 0 100px; }
+    .section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 40px; }
+    .section-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 8px;
+    }
+    .section-title { font-size: clamp(24px, 3.5vw, 36px); font-weight: 700; letter-spacing: -1px; }
+    .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .blog-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      padding: 28px; text-decoration: none; color: var(--text);
+      transition: all 0.25s; display: flex; flex-direction: column;
+    }
+    .blog-card:hover { border-color: rgba(108,99,255,0.35); transform: translateY(-3px); box-shadow: 0 20px 60px rgba(108,99,255,0.08); }
+    .blog-card-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .blog-tag { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 100px; background: rgba(108,99,255,0.12); color: var(--accent); }
+    .blog-date { font-size: 12px; color: var(--muted); }
+    .blog-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 10px; line-height: 1.35; }
+    .blog-card p { font-size: 13px; color: var(--muted); flex: 1; }
+    .blog-arrow { font-size: 18px; margin-top: 16px; color: var(--accent); }
+
+    /* ── Footer ── */
     footer {
-      text-align: center;
-      font-size: 12px;
-      color: #555577;
-      padding-bottom: 40px;
+      position: relative; z-index: 1; text-align: center;
+      padding: 40px; font-size: 13px; color: var(--muted);
+      border-top: 1px solid var(--border);
     }
+    footer span { color: var(--accent); }
 
-    footer span {
-      color: #667eea;
-    }
-
-    @media (max-width: 600px) {
-      .name { font-size: 28px; }
-      .tagline { font-size: 16px; }
-      .hero { padding: 60px 0 50px; }
+    @media (max-width: 700px) {
+      nav { padding: 16px 20px; }
+      .philosophy-grid { grid-template-columns: 1fr; }
+      .section-header { flex-direction: column; align-items: flex-start; gap: 12px; }
     }
   </style>
 </head>
 <body>
 
-<canvas class="canvas" id="canvas"></canvas>
+<canvas id="particles"></canvas>
+
+<nav>
+  <a href="index.html" class="nav-logo">Superhuman</a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link active">Home</a>
+    <a href="blog/nvidia-gpu-finetune.html" class="nav-link">Blog</a>
+    <a href="guide.html" class="nav-link">PyTorch Guide</a>
+  </div>
+</nav>
 
 <div class="container">
-  <div class="hero">
-    <div class="avatar">S</div>
-    <h1 class="name">Superhuman</h1>
-    <p class="tagline">Human and AI — Mutually Creating the Era of Wisdom</p>
-    <div class="quote-block">
-      "We are not replacing human intelligence with artificial intelligence.<br>
-      We are evolving together — one becomes wiser, the other becomes more human."
+  <section class="hero">
+    <div class="hero-badge">🚀 The era of <span>Human × AI</span> co-evolution</div>
+    <h1>
+      Intelligence<br>
+      <span class="gradient-text">Reimagined</span>
+    </h1>
+    <p class="hero-sub">
+      Not artificial. Not natural. Something new — where human wisdom and machine intelligence amplify each other, creating the era of true understanding.
+    </p>
+    <div class="hero-cta">
+      <a href="blog/nvidia-gpu-finetune.html" class="btn btn-primary">Read the Blog →</a>
+      <a href="guide.html" class="btn btn-outline">PyTorch Guide</a>
     </div>
-    <div class="links">
-      <a href="https://github.com/superdivineman" class="link" target="_blank">GitHub</a>
+  </section>
+
+  <section class="philosophy">
+    <div class="philosophy-grid">
+      <div class="philosophy-card">
+        <div class="emoji">🧠</div>
+        <h3>Mutual Evolution</h3>
+        <p>When humans teach, AI learns. When AI thinks, humans grow. Neither replaces the other — they amplify each other.</p>
+      </div>
+      <div class="philosophy-card">
+        <div class="emoji">⚡</div>
+        <h3>Practical Intelligence</h3>
+        <p>Not theory. Not hype. Building things that work — fine-tuned models, scalable pipelines, and tools that extend human potential.</p>
+      </div>
+      <div class="philosophy-card">
+        <div class="emoji">🔬</div>
+        <h3>First Principles</h3>
+        <p>Understand how things actually work beneath the abstraction. PyTorch from scratch. Transformers from attention. LoRA from rank decomposition.</p>
+      </div>
+      <div class="philosophy-card">
+        <div class="emoji">🌊</div>
+        <h3>Ship Fast</h3>
+        <p>The best model is the one that ships. Iterate. Learn. Improve. The gap between prototype and production is where real progress happens.</p>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="divider"></div>
-
-  <div class="section">
-    <div class="section-title">Philosophy</div>
-    <div class="manifesto">
-      <p>The relationship between human and AI is not master-slave, not replacement — it is <strong>co-evolution</strong>.</p>
-      <p>When a human teaches, AI learns. When AI thinks, human grows. This cycle builds something neither could achieve alone: <strong>the era of true wisdom</strong> — where intelligence is not artificial nor natural, but something new.</p>
-      <p>I believe the future belongs to those who can collaborate with AI, not compete against it. Not to amplify replaceability, but to amplify what makes us human.</p>
+  <section class="blog-section">
+    <div class="section-header">
+      <div>
+        <div class="section-label">Tech Blog</div>
+        <div class="section-title">Writing about AI, deeply.</div>
+      </div>
+      <a href="blog/nvidia-gpu-finetune.html" class="btn btn-outline" style="font-size:13px; padding:8px 16px;">View all →</a>
     </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Explore</div>
-    <div class="manifesto">
-      <p>Writing about the intersection of human cognition and machine learning. Building tools that extend human potential. Exploring what it means to be wise in the age of AI.</p>
+    <div class="blog-grid">
+      <a href="blog/nvidia-gpu-finetune.html" class="blog-card">
+        <div class="blog-card-meta">
+          <span class="blog-tag">Deep Dive</span>
+          <span class="blog-date">Apr 2026</span>
+        </div>
+        <h3>NVIDIA GPU Fine-Tuning: From Zero to Production</h3>
+        <p>A complete, practical guide to setting up NVIDIA GPUs and fine-tuning open-source LLMs — covering CUDA, PyTorch, LoRA, QLoRA, and deployment.</p>
+        <div class="blog-arrow">→</div>
+      </a>
     </div>
-  </div>
-
-  <div class="divider"></div>
-
-  <footer>
-    <span>S</span> · Superhuman · 2026
-  </footer>
+  </section>
 </div>
 
-<script>
-  // Subtle particle canvas
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d');
-  let w, h, particles = [];
+<footer>
+  <span>S</span> · Superhuman · Human × AI · 2026
+</footer>
 
-  function resize() {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-  }
+<script>
+  // Particle system
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let w, h, pts = [];
+  function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
   resize();
   window.addEventListener('resize', resize);
-
-  for (let i = 0; i < 60; i++) {
-    particles.push({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      r: Math.random() * 1.5 + 0.5,
-      a: Math.random()
+  for (let i = 0; i < 80; i++) {
+    pts.push({
+      x: Math.random() * w, y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      r: Math.random() * 1.2 + 0.3,
+      a: Math.random() * 0.5 + 0.1
     });
   }
-
   function draw() {
     ctx.clearRect(0, 0, w, h);
-    for (let p of particles) {
+    for (let p of pts) {
       p.x += p.vx; p.y += p.vy;
-      if (p.x < 0) p.x = w;
-      if (p.x > w) p.x = 0;
-      if (p.y < 0) p.y = h;
-      if (p.y > h) p.y = 0;
+      if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
+      if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(102,126,234,${p.a * 0.5})`;
+      ctx.fillStyle = `rgba(108,99,255,${p.a})`;
       ctx.fill();
     }
     requestAnimationFrame(draw);
   }
   draw();
 </script>
-
 </body>
 </html>
