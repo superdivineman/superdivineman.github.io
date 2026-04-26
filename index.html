@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Superhuman — Where Human Meets AI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #e8e8f0;
+      line-height: 1.7;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 100px 0 80px;
+    }
+
+    .avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      margin: 0 auto 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      font-weight: 700;
+      color: white;
+      box-shadow: 0 0 60px rgba(102, 126, 234, 0.4);
+    }
+
+    .name {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+    }
+
+    .tagline {
+      font-size: 18px;
+      color: #9999bb;
+      margin-bottom: 32px;
+    }
+
+    .quote-block {
+      max-width: 520px;
+      margin: 0 auto 48px;
+      padding: 24px 32px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      border-left: 3px solid #667eea;
+      font-size: 15px;
+      color: #ccccdd;
+      font-style: italic;
+    }
+
+    .section {
+      margin-bottom: 56px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #667eea;
+      margin-bottom: 20px;
+    }
+
+    .manifesto {
+      font-size: 16px;
+      line-height: 1.9;
+      color: #aaaacc;
+    }
+
+    .manifesto p + p {
+      margin-top: 16px;
+    }
+
+    .links {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: #ccccdd;
+      text-decoration: none;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .link:hover {
+      background: rgba(102,126,234,0.2);
+      border-color: #667eea;
+      color: #fff;
+    }
+
+    .divider {
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #667eea, transparent);
+      margin: 48px auto;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: #555577;
+      padding-bottom: 40px;
+    }
+
+    footer span {
+      color: #667eea;
+    }
+
+    @media (max-width: 600px) {
+      .name { font-size: 28px; }
+      .tagline { font-size: 16px; }
+      .hero { padding: 60px 0 50px; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas class="canvas" id="canvas"></canvas>
+
+<div class="container">
+  <div class="hero">
+    <div class="avatar">S</div>
+    <h1 class="name">Superhuman</h1>
+    <p class="tagline">Human and AI — Mutually Creating the Era of Wisdom</p>
+    <div class="quote-block">
+      "We are not replacing human intelligence with artificial intelligence.<br>
+      We are evolving together — one becomes wiser, the other becomes more human."
+    </div>
+    <div class="links">
+      <a href="https://github.com/superdivineman" class="link" target="_blank">GitHub</a>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-title">Philosophy</div>
+    <div class="manifesto">
+      <p>The relationship between human and AI is not master-slave, not replacement — it is <strong>co-evolution</strong>.</p>
+      <p>When a human teaches, AI learns. When AI thinks, human grows. This cycle builds something neither could achieve alone: <strong>the era of true wisdom</strong> — where intelligence is not artificial nor natural, but something new.</p>
+      <p>I believe the future belongs to those who can collaborate with AI, not compete against it. Not to amplify replaceability, but to amplify what makes us human.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Explore</div>
+    <div class="manifesto">
+      <p>Writing about the intersection of human cognition and machine learning. Building tools that extend human potential. Exploring what it means to be wise in the age of AI.</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <footer>
+    <span>S</span> · Superhuman · 2026
+  </footer>
+</div>
+
+<script>
+  // Subtle particle canvas
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles = [];
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  for (let i = 0; i < 60; i++) {
+    particles.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 1.5 + 0.5,
+      a: Math.random()
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    for (let p of particles) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = w;
+      if (p.x > w) p.x = 0;
+      if (p.y < 0) p.y = h;
+      if (p.y > h) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(102,126,234,${p.a * 0.5})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+</script>
+
+</body>
+</html>
