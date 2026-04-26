@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fine-Tuning Speech Recognition Models — Superhuman</title>
+  <meta name="description" content="A practical guide to fine-tuning speech recognition models — Whisper, Wav2Vec 2.0, and Coqui STT. From data prep to production deployment.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #030308; --surface: rgba(255,255,255,0.03); --surface2: rgba(255,255,255,0.05);
+      --border: rgba(255,255,255,0.07); --text: #e2e2ee; --muted: #6b6b8a;
+      --accent: #6c63ff; --accent2: #00d4ff; --gradient: linear-gradient(135deg, #6c63ff 0%, #00d4ff 100%);
+      --code-bg: #0d0d14;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; }
+    #particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 18px 48px; background: rgba(3,3,8,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+    .nav-logo { font-size: 15px; font-weight: 600; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
+    .nav-links { display: flex; gap: 4px; }
+    .nav-link { padding: 7px 16px; font-size: 13px; font-weight: 450; color: var(--muted); text-decoration: none; border-radius: 8px; transition: all 0.2s; }
+    .nav-link:hover { color: var(--text); background: var(--surface); }
+    .nav-link.active { color: var(--text); background: var(--surface); }
+    .container { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 0 24px; }
+    .post-hero { padding: 140px 0 60px; }
+    .post-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 100px; background: rgba(0,212,255,0.12); color: var(--accent2); }
+    .reading-time { font-size: 12px; color: var(--muted); }
+    h1 { font-size: clamp(28px, 5vw, 46px); font-weight: 700; letter-spacing: -1.5px; line-height: 1.15; margin-bottom: 20px; }
+    h1 .highlight { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .subtitle { font-size: 17px; color: var(--muted); margin-bottom: 40px; font-weight: 350; }
+    .author { display: flex; align-items: center; gap: 12px; padding: 20px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 56px; }
+    .author-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #fff; flex-shrink: 0; }
+    .author-info { font-size: 14px; }
+    .author-name { font-weight: 600; }
+    .author-date { color: var(--muted); font-size: 13px; }
+    .content { padding-bottom: 100px; }
+    h2 { font-size: clamp(20px, 3vw, 26px); font-weight: 700; letter-spacing: -0.8px; margin: 56px 0 20px; }
+    h3 { font-size: 18px; font-weight: 600; margin: 32px 0 14px; }
+    p { margin-bottom: 18px; font-size: 15.5px; color: #cccce0; }
+    strong { color: var(--text); font-weight: 600; }
+    ul, ol { margin: 0 0 20px 20px; color: #cccce0; font-size: 15.5px; }
+    li { margin-bottom: 8px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code { font-family: 'JetBrains Mono', monospace; font-size: 13px; background: var(--code-bg); color: #a8a8e0; padding: 2px 7px; border-radius: 5px; }
+    pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; overflow-x: auto; margin: 24px 0 32px; font-size: 13px; line-height: 1.65; }
+    pre code { background: none; padding: 0; font-size: 13px; color: #c8c8e0; }
+    .comment { color: #4a5568; }
+    .keyword { color: #c792ea; }
+    .string { color: #c3e88d; }
+    .function { color: #82aaff; }
+    .number { color: #f78c6c; }
+    .class { color: #ffcb6b; }
+    .variable { color: #f07178; }
+    .operator { color: #89ddff; }
+    .callout { background: rgba(108,99,255,0.07); border: 1px solid rgba(108,99,255,0.2); border-left: 3px solid var(--accent); border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 28px 0; font-size: 14.5px; color: #aaaacc; }
+    .callout-title { font-weight: 600; color: var(--accent); margin-bottom: 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+    .callout.info { border-color: rgba(0,212,255,0.3); background: rgba(0,212,255,0.05); }
+    .callout.info .callout-title { color: var(--accent2); }
+    .callout.warn { border-color: rgba(251,189,35,0.3); background: rgba(251,189,35,0.05); }
+    .callout.warn .callout-title { color: #fbd435; }
+    table { width: 100%; border-collapse: collapse; margin: 24px 0 32px; font-size: 14px; }
+    th { text-align: left; padding: 10px 16px; background: var(--surface2); border-bottom: 1px solid var(--border); color: var(--text); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    td { padding: 10px 16px; border-bottom: 1px solid var(--border); color: #aaaacc; }
+    tr:hover td { background: var(--surface); }
+    .divider { width: 48px; height: 2px; background: var(--gradient); margin: 48px 0; border-radius: 2px; }
+    footer { position: relative; z-index: 1; text-align: center; padding: 40px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--border); }
+    footer span { color: var(--accent); }
+    footer a { color: var(--accent); }
+    @media (max-width: 700px) { nav { padding: 16px 20px; } pre { font-size: 12px; padding: 16px; } }
+  </style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<nav>
+  <a href="../index.html" class="nav-logo">Superhuman</a>
+  <div class="nav-links">
+    <a href="../index.html" class="nav-link">Home</a>
+    <a href="nvidia-gpu-finetune.html" class="nav-link">GPU Fine-Tuning</a>
+    <a href="fine-tune-speech-model.html" class="nav-link active">Speech Models</a>
+    <a href="../guide.html" class="nav-link">PyTorch Guide</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="post-hero">
+    <div class="post-meta">
+      <span class="tag">Speech AI</span>
+      <span class="reading-time">~20 min read</span>
+    </div>
+    <h1>Fine-Tuning Speech<br><span class="highlight">Recognition Models</span></h1>
+    <p class="subtitle">A practical, end-to-end guide to fine-tuning Whisper, Wav2Vec 2.0, and Coqui STT — from dataset prep to production deployment.</p>
+    <div class="author">
+      <div class="author-avatar">S</div>
+      <div class="author-info">
+        <div class="author-name">Superhuman</div>
+        <div class="author-date">April 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+<h2>Table of Contents</h2>
+<ol>
+  <li><a href="#why">Why Fine-Tune Speech Models?</a></li>
+  <li><a href="#models">The Speech Model Landscape</a></li>
+  <li><a href="#data">Data Preparation</a></li>
+  <li><a href="#whisper">Fine-Tuning Whisper (OpenAI)</a></li>
+  <li><a href="#wav2vec">Fine-Tuning Wav2Vec 2.0</a></li>
+  <li><a href="#coqui">Coqui STT: Transfer Learning</a></li>
+  <li><a href="#augmentation">Data Augmentation for Speech</a></li>
+  <li><a href="#evaluation">Evaluation Metrics</a></li>
+  <li><a href="#deployment">Deployment</a></li>
+  <li><a href="#checklist">Checklist</a></li>
+</ol>
+
+<div class="divider"></div>
+
+<h2 id="why">1. Why Fine-Tune Speech Models?</h2>
+
+<p>Pre-trained speech models are trained on massive, diverse audio datasets — they know general English speech patterns but often struggle with:</p>
+
+<ul>
+  <li><strong>Domain-specific vocabulary</strong> — medical notes, legal testimony, technical documentation, code</li>
+  <li><strong>Accented speech</strong> — non-native speakers, regional accents</li>
+  <li><strong>Noisy environments</strong> — factories, cars, call centers</li>
+  <li><strong>Low-resource languages</strong> — adapting Whisper to dialects or minority languages</li>
+  <li><strong>Specialized formats</strong> — timestamps, punctuation, speaker diarization</li>
+</ul>
+
+<p>Fine-tuning a pre-trained model on 1-10 hours of domain-specific data can dramatically improve WER (Word Error Rate) on your target task.</p>
+
+<div class="callout">
+  <div class="callout-title">Rule of Thumb</div>
+  If your target domain has specific vocabulary or acoustic conditions, fine-tuning is almost always worth it. 10 hours of labeled domain data + a good pre-trained model beats 1,000 hours of generic data.
+</div>
+
+<h2 id="models">2. The Speech Model Landscape</h2>
+
+<table>
+  <thead>
+    <tr><th>Model</th><th>Architecture</th><th>Size</th><th>WER (LibriSpeech)</th><th>Best For</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Whisper (OpenAI)</strong></td><td>Transformer Encoder-Decoder</td><td>39M – 1550M</td><td>~2.5% (large)</td><td>General ASR, multilingual, noisy audio</td></tr>
+    <tr><td><strong>Wav2Vec 2.0</strong></td><td>Conformer + Quantization</td><td>95M – 317M</td><td>~1.8% (large)</td><td>Low-resource languages, acoustic tasks</td></tr>
+    <tr><td><strong>WhisperX</strong></td><td>Whisper + Phoneme Alignment</td><td>Same as Whisper</td><td>~2.5%</td><td>Timestamped transcription, speaker diarization</td></tr>
+    <tr><td><strong>Coqui STT</strong></td><td>Jasper / QuartzNet</td><td>15M – 320M</td><td>~4% (base)</td><td>Fast inference, on-device, customization</td></tr>
+    <tr><td><strong>Paraformer (Alibaba)</strong></td><td>Non-autoregressive Transformer</td><td>220M</td><td>~2.1%</td><td>Fast streaming inference</td></tr>
+  </tbody>
+</table>
+
+<p>For most fine-tuning tasks: <strong>Whisper</strong> is the safest bet — multilingual, robust to noise, excellent open-source weights. Wav2Vec 2.0 is better for low-resource languages or when you need to extract acoustic embeddings for other tasks.</p>
+
+<h2 id="data">3. Data Preparation</h2>
+
+<h3>3.1 Audio Format Requirements</h3>
+
+<pre><code><span class="comment"># Supported formats: WAV (preferred), FLAC, MP3, OGG, M4A</span>
+<span class="comment"># Recommended: 16-bit PCM WAV, 16kHz mono</span>
+
+<span class="comment"># Convert any audio to 16kHz mono WAV</span>
+<span class="keyword">from</span> pydub <span class="keyword">import</span> AudioSegment
+
+<span class="keyword">def</span> <span class="function">convert_audio</span>(path, output_path, target_sr=16000):
+    audio = AudioSegment.from_file(path)
+    audio = audio.set_frame_rate(target_sr).set_channels(1).set_sample_width(2)
+    audio.export(output_path, format=<span class="string">"wav"</span>)
+
+<span class="comment"># Batch convert</span>
+<span class="keyword">import</span> glob, pathlib
+audio_files = glob.glob(<span class="string">"./raw_audio/**/*.m4a"</span>, recursive=True)
+<span class="keyword">for</span> f <span class="keyword">in</span> audio_files:
+    out = pathlib.Path(f).with_suffix(<span class="string">".wav"</span>)
+    convert_audio(f, out)</code></pre>
+
+<h3>3.2 Dataset Structure</h3>
+
+<pre><code><span class="comment"># ── Option A: JSON manifest (most common for Whisper/Wav2Vec) ──────────────</span>
+<span class="comment"># train_manifest.json</span>
+{
+  <span class="string">"audio_path"</span>: <span class="string">"/data/audio/sample_001.wav"</span>,
+  <span class="string">"text"</span>: <span class="string">"the quick brown fox jumps over the lazy dog"</span>,
+  <span class="string">"duration"</span>: 3.5
+}
+{
+  <span class="string">"audio_path"</span>: <span class="string">"/data/audio/sample_002.wav"</span>,
+  <span class="string">"text"</span>: <span class="string">"speech recognition is transforming how we interact"</span>,
+  <span class="string">"duration"</span>: 4.1
+}
+
+<span class="comment"># ── Option B: HuggingFace dataset ───────────────────────────────────────────</span>
+<span class="comment"># Use load_dataset for common speech datasets</span>
+<span class="keyword">from</span> datasets <span class="keyword">import</span> load_dataset, Audio
+
+dataset = load_dataset(<span class="string">"mozilla-foundation/common_voice_13_0"</span>, <span class="string">"en"</span>, split=<span class="string">"train"</span>)
+dataset = dataset.cast_column(<span class="string">"audio"</span>, Audio(sampling_rate=16000))</code></pre>
+
+<h3>3.3 Text Normalization</h3>
+
+<pre><code><span class="comment"># Speech datasets need consistent text normalization</span>
+<span class="keyword">import</span> re
+
+<span class="keyword">def</span> <span class="function">normalize_text</span>(text):
+    text = text.lower()
+    text = re.sub(r<span class="string">"[^\w\s]"</span>, <span class="string">""</span>, text)   <span class="comment"># remove punctuation</span>
+    text = re.sub(r<span class="string">"\s+"</span>, <span class="string">" "</span>, text)        <span class="comment"># collapse whitespace</span>
+    text = text.strip()
+    <span class="keyword">return</span> text
+
+<span class="comment"># Whisper has built-in normalization: `normalizer` from transformers</span>
+<span class="keyword">from</span> transformers <span class="keyword">import</span> WhisperTokenizer, WhisperNormalizer
+tokenizer = WhisperTokenizer.from_pretrained(<span class="string">"openai/whisper-small"</span>)
+normalizer = WhisperNormalizer()</code></pre>
+
+<h3>3.4 How Much Data Do You Need?</h3>
+
+<table>
+  <thead>
+    <tr><th>Task</th><th>Minimum Data</th><th>Recommended</th><th>Expected WER Improvement</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Light domain adaptation</td><td>1 hour</td><td>10 hours</td><td>10-30% relative</td></tr>
+    <tr><td>Heavy accent / noisy</td><td>10 hours</td><td>50+ hours</td><td>20-50% relative</td></tr>
+    <tr><td>New language</td><td>100 hours</td><td>500+ hours</td><td>Varies</td></tr>
+    <tr><td>Specialized vocabulary</td><td>1 hour</td><td>10 hours</td><td>15-40% relative</td></tr>
+  </tbody>
+</table>
+
+<h2 id="whisper">4. Fine-Tuning Whisper (OpenAI)</h2>
+
+<h3>4.1 Why Whisper?</h3>
+
+<p>Whisper is an encoder-decoder Transformer. The encoder processes audio into hidden states; the decoder generates text autoregressively. Fine-tuning replaces the decoder head and optionally unfreezes parts of the encoder for domain-specific acoustic patterns.</p>
+
+<h3>4.2 Setup</h3>
+
+<pre><code>pip install transformers datasets accelerate evaluate jiwer \
+  torchaudio whisper</code></pre>
+
+<h3>4.3 Full Fine-Tuning Code</h3>
+
+<pre><code><span class="keyword">import</span> torch
+<span class="keyword">from</span> transformers <span class="keyword">import</span> (
+    WhisperProcessor, WhisperForConditionalGeneration,
+    WhisperTokenizer, WhisperNormalizer,
+    TrainingArguments, Trainer, DataCollatorWithPadding
+)
+<span class="keyword">from</span> datasets <span class="keyword">import</span> load_dataset, Audio
+
+<span class="comment"># ── Load pre-trained model ───────────────────────────────────────────────────</span>
+model_name = <span class="string">"openai/whisper-small"</span>   <span class="comment"># 244M params. Also: tiny(39M), base(74M), small(244M), medium(769M), large(1550M)</span>
+processor = WhisperProcessor.from_pretrained(model_name)
+model = WhisperForConditionalGeneration.from_pretrained(model_name)
+tokenizer = WhisperTokenizer.from_pretrained(model_name)
+normalizer = WhisperNormalizer()
+
+<span class="comment"># ── Force English transcription (if you only need English) ───────────────────</span>
+model.config.forced_decoder_ids = None
+model.config.suppress_tokens = []
+
+<span class="comment"># ── Prepare dataset ───────────────────────────────────────────────────────────</span>
+<span class="comment"># Assumes train_manifest.json in {"audio_path": ..., "text": ...} format</span>
+<span class="keyword">from</span> datasets <span class="keyword">import</span> Dataset
+
+<span class="keyword">def</span> <span class="function">load_manifest</span>(path):
+    <span class="keyword">import</span> json
+    <span class="keyword">with</span> open(path) <span class="keyword">as</span> f:
+        items = [json.loads(line) <span class="keyword">for</span> line <span class="keyword">in</span> f]
+    <span class="keyword">return</span> items
+
+<span class="keyword">def</span> <span class="function">prepare_dataset</span>(item):
+    audio_path = item[<span class="string">"audio_path"</span>]
+    text = normalizer(item[<span class="string">"text"</span>])
+
+    <span class="comment"># Load + resample audio</span>
+    audio = item[<span class="string">"audio"</span>]
+    audio_array = audio[<span class="string">"array"</span>]
+    sampling_rate = audio[<span class="string">"sampling_rate"</span>]
+
+    <span class="comment"># Process audio → features</span>
+    input_features = processor(
+        audio_array, sampling_rate=sampling_rate,
+        return_tensors=<span class="string">"pt"</span>
+    ).input_features[0]
+
+    <span class="comment"># Tokenize text → labels</span>
+    labels = tokenizer(text, truncation=True, max_length=448).input_ids
+
+    item[<span class="string">"input_features"</span>] = input_features
+    item[<span class="string">"labels"</span>] = labels
+    <span class="keyword">return</span> item
+
+<span class="comment"># Load dataset</span>
+raw_dataset = load_dataset(<span class="string">"json"</span>, data_files={<span class="string">"train"</span>: <span class="string">"./train_manifest.json"</span>}, split=<span class="string">"train"</span>)
+raw_dataset = raw_dataset.cast_column(<span class="string">"audio"</span>, Audio(sampling_rate=16000))
+dataset = raw_dataset.map(prepare_dataset, remove_columns=raw_dataset.column_names)
+
+<span class="comment"># ── Data collator ( Whisper requires special handling ) ──────────────────────</span>
+<span class="keyword">class</span> <span class="class">WhisperDataCollator</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="variable">self</span>, processor):
+        <span class="variable">self</span>.processor = processor
+        <span class="variable">self</span>.processor.tokenizer.pad_token = <span class="variable">self</span>.processor.tokenizer.eos_token
+
+    <span class="keyword">def</span> <span class="function">__call__</span>(<span class="variable">self</span>, features):
+        <span class="comment"># Pad input_features (variable-length audio)</span>
+        input_features = [
+            {<span class="string">"input_features"</span>: f[<span class="string">"input_features"</span>]} <span class="keyword">for</span> f <span class="keyword">in</span> features
+        ]
+        batch = <span class="variable">self</span>.processor.feature_augmentor.pad(input_features, return_tensors=<span class="string">"pt"</span>)
+
+        <span class="comment"># Pad labels</span>
+        label_features = [
+            {<span class="string">"input_ids"</span>: f[<span class="string">"labels"</span>]} <span class="keyword">for</span> f <span class="keyword">in</span> features
+        ]
+        labels_batch = <span class="variable">self</span>.processor.tokenizer.pad(label_features, return_tensors=<span class="string">"pt"</span>)
+        labels = labels_batch[<span class="string">"input_ids"</span>].masked_fill(labels_batch.attention_mask.ne(1), -100)
+
+        batch[<span class="string">"labels"</span>] = labels
+        <span class="keyword">return</span> batch
+
+data_collator = WhisperDataCollator(processor)
+
+<span class="comment"># ── Training arguments ──────────────────────────────────────────────────────</span>
+training_args = TrainingArguments(
+    output_dir=<span class="string">"./whisper-finetuned"</span>,
+    per_device_train_batch_size=8,
+    gradient_accumulation_steps=2,          <span class="comment"># effective batch = 16</span>
+    learning_rate=1e-5,                      <span class="comment"># Whisper is already well-trained — use low LR</span>
+    warmup_steps=100,
+    num_train_epochs=3,
+    fp16=True,                              <span class="comment"># use bf16 on Ampere+</span>
+    logging_steps=25,
+    save_strategy=<span class="string">"epoch"</span>,
+    report_to=<span class="string">"tensorboard"</span>,
+    max_grad_norm=1.0,                       <span class="comment"># gradient clipping</span>
+)
+
+<span class="comment"># ── Trainer ──────────────────────────────────────────────────────────────────</span>
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=dataset,
+    data_collator=data_collator,
+)
+trainer.train()
+model.save_pretrained(<span class="string">"./whisper-finetuned/final"</span>)</code></pre>
+
+<h3>4.4 LoRA Fine-Tuning Whisper (Recommended)</h3>
+
+<pre><code><span class="comment"># For large Whisper models, use LoRA to save VRAM</span>
+pip install peft
+
+<span class="keyword">from</span> peft <span class="keyword">import</span> LoraConfig, get_peft_model, PeftModel
+
+<span class="comment"># Whisper attention layers to adapt</span>
+lora_config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    target_modules=[<span class="string">"q_proj"</span>, <span class="string">"v_proj"</span>, <span class="string">"k_proj"</span>, <span class="string">"out_proj"</span>, <span class="string">"fc1"</span>, <span class="string">"fc2"</span>],
+    lora_dropout=0.05,
+    bias=<span class="string">"none"</span>,
+)
+
+model = WhisperForConditionalGeneration.from_pretrained(model_name)
+model = get_peft_model(model, lora_config)
+model.print_trainable_parameters()
+<span class="comment"># tiny:    ~0.3M trainable / 39M total   (~0.8%)</span>
+<span class="comment"># small:   ~1.5M trainable / 244M total  (~0.6%)</span></code></pre>
+
+<h2 id="wav2vec">5. Fine-Tuning Wav2Vec 2.0</h2>
+
+<p>Wav2Vec 2.0 uses a contrastive learning approach: the encoder processes raw audio into latent representations, and a quantization module provides training targets. Fine-tuning replaces the quantizer with a labeled classification head.</p>
+
+<pre><code><span class="keyword">from</span> transformers <span class="keyword">import</span> (
+    Wav2Vec2Processor, Wav2Vec2ForCTC,
+    Wav2Vec2FeatureExtractor, Wav2Vec2CTCTokenizer
+)
+<span class="keyword">from</span> datasets <span class="keyword">import</span> load_dataset, Audio
+
+<span class="comment"># ── Load base model ───────────────────────────────────────────────────────────</span>
+model_name = <span class="string">"facebook/wav2vec2-base-960h"</span>   <span class="comment"># 960h = trained on 960 hours of LibriSpeech</span>
+processor = Wav2Vec2Processor.from_pretrained(model_name)
+model = Wav2Vec2ForCTC.from_pretrained(model_name)
+
+<span class="comment"># Freeze most layers — fine-tune only the last few Transformer blocks + classifier</span>
+<span class="keyword">for</span> param <span class="keyword">in</span> model.wav2vec2.parameters():
+    param.requires_grad = False
+<span class="keyword">for</span> param <span class="keyword">in</span> model.wav2vec2.encoder.layers[-4:].parameters():  <span class="comment"># unfreeze last 4 encoder layers</span>
+    param.requires_grad = True
+model.lm_head.requires_grad = True
+
+<span class="comment"># ── Resample all audio to 16kHz ──────────────────────────────────────────────</span>
+dataset = load_dataset(<span class="string">"path/to/your/manifest"</span>, split=<span class="string">"train"</span>)
+dataset = dataset.cast_column(<span class="string">"audio"</span>, Audio(sampling_rate=16000))
+
+<span class="comment"># ── Preprocess ───────────────────────────────────────────────────────────────</span>
+<span class="keyword">def</span> <span class="function">prepare_batch</span>(batch):
+    audio = batch[<span class="string">"audio"</span>]
+    batch[<span class="string">"input_values"</span>] = processor(audio[<span class="string">"array"</span>], sampling_rate=16000).input_values[0]
+    <span class="keyword">with</span> processor.as_target_processor():
+        batch[<span class="string">"labels"</span>] = processor(batch[<span class="string">"text"</span>]).input_ids
+    <span class="keyword">return</span> batch
+
+dataset = dataset.map(prepare_batch, remove_columns=dataset.column_names)
+
+<span class="comment"># ── Data collator ─────────────────────────────────────────────────────────────</span>
+<span class="keyword">class</span> <span class="class">Wav2Vec2Collator</span>:
+    <span class="keyword">def</span> <span class="function">__call__</span>(<span class="variable">self</span>, features):
+        input_values = [{<span class="string">"input_values"</span>: f[<span class="string">"input_values"</span>]} <span class="keyword">for</span> f <span class="keyword">in</span> features]
+        batch = processor.pad(input_values, return_tensors=<span class="string">"pt"</span>, padding=True)
+        labels = [{<span class="string">"labels"</span>: f[<span class="string">"labels"</span>]} <span class="keyword">for</span> f <span class="keyword">in</span> features]
+        label_batch = processor.tokenizer.pad(labels, return_tensors=<span class="string">"pt"</span>)
+        batch[<span class="string">"labels"</span>] = label_batch[<span class="string">"input_ids"</span>].masked_fill(
+            label_batch.attention_mask.ne(1), -100
+        )
+        <span class="keyword">return</span> batch
+
+<span class="comment"># ── Training ──────────────────────────────────────────────────────────────────</span>
+<span class="comment"># Use HuggingFace Trainer with CTC loss (Wav2Vec2 uses CTC, not cross-entropy)</span>
+<span class="keyword">from</span> transformers <span class="keyword">import</span> TrainingArguments, Trainer
+
+training_args = TrainingArguments(
+    output_dir=<span class="string">"./wav2vec2-finetuned"</span>,
+    group_by_length=True,                    <span class="comment"># group similar-length samples for efficiency</span>
+    per_device_train_batch_size=8,
+    gradient_accumulation_steps=4,
+    learning_rate=1e-4,
+    warmup_steps=100,
+    num_train_epochs=10,
+    fp16=True,
+    logging_steps=50,
+)
+trainer = Trainer(
+    model=model, args=training_args,
+    train_dataset=dataset,
+    data_collator=Wav2Vec2Collator(),
+)
+trainer.train()</code></pre>
+
+<h2 id="coqui">6. Coqui STT: Transfer Learning</h2>
+
+<p>Coqui STT (formerly Mozilla STT) is designed specifically for fine-tuning on custom datasets. It uses transfer learning from a pre-trained checkpoint and is optimized for on-device inference.</p>
+
+<pre><code><span class="comment"># Install Coqui STT</span>
+pip install coqui-stt
+
+<span class="comment"># Download pre-trained model</span>
+<span class="comment"># Available: quartznet15x5 (93M), quartznet15x5se (95M), citrinet-1024 (321M)</span>
+coqui-stt-train \
+  --initialize_from_checkpoint model_checkpoint.pbmm \
+  --n_hidden 2048 \
+  --train_files train.csv \
+  --dev_files dev.csv \
+  --test_files test.csv \
+  --sample_rate 16000 \
+  --epochs 50 \
+  --learning_rate 0.0003 \
+  --export_tflite \
+  --export_dir ./coqui-output</code></pre>
+
+<div class="callout info">
+  <div class="callout-title">Coqui vs HuggingFace</div>
+  Coqui STT is better for production on embedded devices (Raspberry Pi, mobile). HuggingFace models (Whisper, Wav2Vec) are better for cloud deployment and research flexibility. For fine-tuning: Whisper/Wav2Vec give better raw quality; Coqui gives better on-device performance.
+</div>
+
+<h2 id="augmentation">7. Data Augmentation for Speech</h2>
+
+<p>Speech data is often limited. Augmentation artificially expands your dataset:</p>
+
+<pre><code><span class="keyword">import</span> torch
+<span class="keyword">import</span> torchaudio
+<span class="keyword">import</span> torchaudio.transforms <span class="keyword">as</span> T
+
+<span class="comment"># ── Speed & Pitch perturbation ───────────────────────────────────────────────</span>
+<span class="comment"># Changes prosody without changing content — very effective for robustness</span<span class="comment"># Changes prosody without changing content — very effective for robustness</span>
+<span class="keyword">def</span> <span class="function">speed_augment</span>(waveform, sample_rate):
+    speed_factor = torch.randint(90, 110, [1]).item() / 100.0
+    sox_effects = [
+        [<span class="string">"speed"</span>, str(speed_factor)],
+        [<span class="string">"rate"</span>, str(sample_rate)],
+    ]
+    augmented, _ = torchaudio.sox_effects.apply_effects_tensor(waveform, sample_rate, sox_effects)
+    <span class="keyword">return</span> augmented
+
+<span class="comment"># ── Noise injection ──────────────────────────────────────────────────────────</span>
+<span class="keyword">def</span> <span class="function">add_noise</span>(waveform, noise_factor=0.005):
+    noise = torch.randn_like(waveform) * noise_factor
+    <span class="keyword">return</span> waveform + noise
+
+<span class="comment"># ── SpecAugment (frequency masking) ──────────────────────────────────────────</span>
+<span class="comment"># Randomly mask frequency bands in the spectrogram — proven effective in speech tasks</span>
+spec_augment = T.TimeStretch(hop_length=256).cuda()
+
+<span class="comment"># ── Background noise from external files ─────────────────────────────────────</span>
+<span class="keyword">def</span> <span class="function">mix_background_noise</span>(waveform, noise_dir, snr_db=10):
+    <span class="keyword">import</span> glob, random, torchaudio
+    noise_files = glob.glob(f<span class="string">"{noise_dir}/*.wav"</span>)
+    noise_wav, sr = torchaudio.load(random.choice(noise_files))
+    noise_wav = noise_wav.mean(0)[:len(waveform)]
+    <span class="comment"># SNR: signal-to-noise ratio in dB</span>
+    snr = 10 ** (snr_db / 20)
+    signal_power = (waveform ** 2).mean()
+    noise_power = (noise_wav ** 2).mean()
+    scale = (signal_power / noise_power / snr) ** 0.5
+    <span class="keyword">return</span> waveform + noise_wav * scale</code></pre>
+
+<h2 id="evaluation">8. Evaluation Metrics</h2>
+
+<p>The standard metric for ASR is <strong>Word Error Rate (WER)</strong>. Lower is better.</p>
+
+<pre><code>pip install jiwer
+
+<span class="keyword">from</span> jiwer <span class="keyword">import</span> wer, cer
+
+<span class="comment"># WER: word-level errors (substitutions + deletions + insertions / total reference words)</span>
+<span class="comment"># CER: character-level errors — useful for languages without word boundaries</span>
+wer_score = wer(reference, hypothesis)
+cer_score = cer(reference, hypothesis)
+<span class="keyword">print</span>(<span class="string">f"WER: {wer_score:.2%}  |  CER: {cer_score:.2%}"</span>)
+
+<span class="comment"># Evaluate on test set</span>
+<span class="keyword">def</span> <span class="function">evaluate_model</span>(model, test_dataset, processor):
+    model.eval()
+    predictions, references = [], []
+    <span class="keyword">for</span> item <span class="keyword">in</span> test_dataset:
+        input_features = processor.feature_extractor(
+            item[<span class="string">"audio"</span>][<span class="string">"array"</span>], sampling_rate=16000, return_tensors=<span class="string">"pt"</span>
+        ).input_features
+        <span class="keyword">with</span> torch.no_grad():
+            generated_ids = model.generate(input_features)
+        transcript = processor.batch_decode(generated_ids)[0]
+        predictions.append(transcript)
+        references.append(item[<span class="string">"text"</span>])
+    <span class="keyword">return</span> wer(references, predictions)</code></pre>
+
+<table>
+  <thead>
+    <tr><th>WER Range</th><th>Quality</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>&lt; 5%</td><td>Excellent</td><td>Nearly perfect transcription</td></tr>
+    <tr><td>5–10%</td><td>Good</td><td>Minor errors, usable for most applications</td></tr>
+    <tr><td>10–20%</td><td>Fair</td><td>Errors noticeable; may need post-editing</td></tr>
+    <tr><td>&gt; 20%</td><td>Poor</td><td>Needs significant improvement or more data</td></tr>
+  </tbody>
+</table>
+
+<h2 id="deployment">9. Deployment</h2>
+
+<h3>Whisper (HuggingFace + FastAPI)</h3>
+
+<pre><code>pip install fastapi uvicorn transformers torch
+
+<span class="comment"># server.py</span>
+<span class="keyword">from</span> fastapi <span class="keyword">import</span> FastAPI, UploadFile, File
+<span class="keyword">from</span> transformers <span class="keyword">import</span> pipeline
+<span class="keyword">import</span> torch
+
+app = FastAPI()
+asr = pipeline(<span class="string">"automatic-speech-recognition"</span>, model=<span class="string">"./whisper-finetuned"</span>, device=0)
+
+@app.post(<span class="string">"/transcribe"</span>)
+<span class="keyword">async def</span> <span class="function">transcribe</span>(file: UploadFile = File(...)):
+    audio_bytes = <span class="keyword">await</span> file.read()
+    <span class="comment"># Save to temp file (or use BytesIO)</span>
+    <span class="keyword">import</span> tempfile, os
+    <span class="keyword">with</span> tempfile.NamedTemporaryFile(suffix=<span class="string">".wav"</span>, delete=False) <span class="keyword">as</span> tmp:
+        tmp.write(audio_bytes)
+        result = asr(tmp.name)
+        os.unlink(tmp.name)
+    <span class="keyword">return</span> result
+
+<span class="comment"># Run: uvicorn server:app --host 0.0.0.0 --port 8000</span>
+
+<span class="comment"># Client</span>
+<span class="keyword">import</span> requests
+<span class="keyword">with</span> open(<span class="string">"audio.wav"</span>, <span class="string">"rb"</span>) <span class="keyword">as</span> f:
+    r = requests.post(<span class="string">"http://localhost:8000/transcribe"</span>, files={<span class="string">"file"</span>: f})
+    <span class="keyword">print</span>(r.json())</code></pre>
+
+<h3>Wav2Vec 2.0 + ONNX Runtime (Production)</h3>
+
+<pre><code><span class="comment"># Export to ONNX for faster CPU inference</span>
+<span class="keyword">from</span> transformers <span class="keyword">import</span> Wav2Vec2ForCTC
+<span class="keyword">import</span> torch.onnx.symbolic_opset12 <span class="keyword">as</span> opset
+
+model = Wav2Vec2ForCTC.from_pretrained(<span class="string">"./wav2vec2-finetuned"</span>)
+model.eval()
+dummy_input = torch.randn(1, 16000)
+
+torch.onnx.export(
+    model, dummy_input, <span class="string">"wav2vec2.onnx"</span>,
+    input_names=[<span class="string">"input"</span>], output_names=[<span class="string">"output"</span>],
+    dynamic_axes={<span class="string">"input"</span>: {0: <span class="string">"batch"</span>}, <span class="string">"output"</span>: {0: <span class="string">"batch"</span>}},
+    opset_version=12,
+)
+
+<span class="comment"># ONNX Runtime inference (much faster than PyTorch on CPU)</span>
+<span class="keyword">import</span> onnxruntime <span class="keyword">as</span> ort
+session = ort.InferenceSession(<span class="string">"wav2vec2.onnx"</span>)
+results = session.run(None, {<span class="string">"input"</span>: audio_input})</code></pre>
+
+<h2 id="checklist">10. Checklist</h2>
+
+<ul>
+  <li>☐ <strong>Audio format:</strong> 16kHz mono WAV (or convert with pydub)</li>
+  <li>☐ <strong>Text normalization:</strong> lowercase, remove punctuation, strip whitespace</li>
+  <li>☐ <strong>Dataset split:</strong> 80/10/10 train/val/test or 90/10 train/test</li>
+  <li>☐ <strong>WER baseline:</strong> evaluate pre-trained model on your test set BEFORE fine-tuning</li>
+  <li>☐ <strong>Learning rate:</strong> 1e-5 for Whisper (already well-trained), 1e-4 for Wav2Vec</li>
+  <li>☐ <strong>Epochs:</strong> 3-10 depending on dataset size; monitor val WER to avoid overfitting</li>
+  <li>☐ <strong>Augmentation:</strong> speed/pitch perturbation + noise injection</li>
+  <li>☐ <strong>Eval:</strong> report WER + CER on held-out test set</li>
+  <li>☐ <strong>Save strategy:</strong> save best model by val WER, not last epoch</li>
+  <li>☐ <strong>Production:</strong> export to ONNX or use FastAPI + GPU for serving</li>
+</ul>
+
+<div class="divider"></div>
+
+<p style="text-align:center; font-size:14px; color:#6b6b8a;">
+  ← <a href="../index.html" style="color:#6c63ff;">Back to Home</a>
+  &nbsp;·&nbsp;
+  <a href="nvidia-gpu-finetune.html" style="color:#6c63ff;">GPU Fine-Tuning</a>
+  &nbsp;·&nbsp;
+  <a href="../guide.html" style="color:#6c63ff;">PyTorch Guide</a>
+</p>
+  </div>
+</div>
+
+<footer>
+  <span>S</span> · Superhuman · Human × AI · 2026
+</footer>
+
+<script>
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let w, h, pts = [];
+  function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  for (let i = 0; i < 80; i++) {
+    pts.push({ x: Math.random()*w, y: Math.random()*h, vx: (Math.random()-0.5)*0.25, vy: (Math.random()-0.5)*0.25, r: Math.random()*1.2+0.3, a: Math.random()*0.5+0.1 });
+  }
+  function draw() {
+    ctx.clearRect(0,0,w,h);
+    for (let p of pts) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
+      if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(0,212,255,${p.a})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+</script>
+</body>
+</html>
